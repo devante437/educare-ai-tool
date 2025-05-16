@@ -1,11 +1,12 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import pandas as pd
+import os
 
-# Create FastAPI app
 app = FastAPI()
 
-# Allow all origins (for dev; restrict in production)
+# Enable CORS for all origins (good for development, restrict in production)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,21 +15,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load Excel file ('requirements.xlsx' should exist in same folder)
+# Serve Flutter web build files from the 'web' folder
+web_dir = os.path.join(os.path.dirname(__file__), "web")
+app.mount("/", StaticFiles(directory=web_dir, html=True), name="web")
+
+# Load Excel file with requirements
 try:
     data = pd.read_excel("requirements.xlsx")
     data.columns = data.columns.str.strip()  # Clean column names
 except FileNotFoundError:
     data = pd.DataFrame(columns=["From Country", "To Country", "Requirement"])
-    print("⚠️ Excel file not found. Make sure 'requirements.xlsx' is placed correctly.")
+    print("⚠️ Excel file 'requirements.xlsx' not found. Place it in the backend folder.")
 
-# Test route
-@app.get("/")
-def root():
-    return {"message": "Study Abroad API is running!"}
-
-# Main route to fetch requirements
-@app.get("/requirements")
+# API endpoint to get requirements based on from_country and to_country
+@app.get("/api/requirements")
 def get_requirements(from_country: str = Query(...), to_country: str = Query(...)):
     result = data[
         (data["From Country"] == from_country) &
@@ -38,3 +38,4 @@ def get_requirements(from_country: str = Query(...), to_country: str = Query(...
         return {"status": "success", "requirement": result.iloc[0]["Requirement"]}
     else:
         return {"status": "not_found", "requirement": "No data found for your selection."}
+
