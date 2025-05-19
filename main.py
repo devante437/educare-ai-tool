@@ -24,12 +24,15 @@ try:
     data = pd.read_excel("requirements.xlsx")
     data.columns = data.columns.str.strip()  # Clean column names
 
-    # Strip whitespace and ensure all are strings
-    data["From Country"] = data["From Country"].astype(str).str.strip()
-    data["To Country"] = data["To Country"].astype(str).str.strip()
+    # Strip whitespace and convert to lowercase
+    data["From Country"] = data["From Country"].astype(str).str.strip().str.lower()
+    data["To Country"] = data["To Country"].astype(str).str.strip().str.lower()
     data["Requirement"] = data["Requirement"].astype(str).str.strip()
 
     print("✅ requirements.xlsx loaded successfully with shape:", data.shape)
+    print("📄 Sample data:")
+    print(data.head())
+
 except FileNotFoundError:
     data = pd.DataFrame(columns=["From Country", "To Country", "Requirement"])
     print("⚠️ Excel file 'requirements.xlsx' not found. Place it in the backend folder.")
@@ -37,8 +40,8 @@ except FileNotFoundError:
 # API endpoint to get requirements based on from_country and to_country
 @app.get("/api/requirements")
 def get_requirements(from_country: str = Query(...), to_country: str = Query(...)):
-    from_country = from_country.strip()
-    to_country = to_country.strip()
+    from_country = from_country.strip().lower()
+    to_country = to_country.strip().lower()
 
     result = data[
         (data["From Country"] == from_country) &
@@ -52,5 +55,6 @@ def get_requirements(from_country: str = Query(...), to_country: str = Query(...
             "status": "not_found",
             "requirement": "No data found for your selection."
         }
+
 
 
