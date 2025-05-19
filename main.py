@@ -23,6 +23,13 @@ app.mount("/", StaticFiles(directory=web_dir, html=True), name="web")
 try:
     data = pd.read_excel("requirements.xlsx")
     data.columns = data.columns.str.strip()  # Clean column names
+
+    # Strip whitespace and ensure all are strings
+    data["From Country"] = data["From Country"].astype(str).str.strip()
+    data["To Country"] = data["To Country"].astype(str).str.strip()
+    data["Requirement"] = data["Requirement"].astype(str).str.strip()
+
+    print("✅ requirements.xlsx loaded successfully with shape:", data.shape)
 except FileNotFoundError:
     data = pd.DataFrame(columns=["From Country", "To Country", "Requirement"])
     print("⚠️ Excel file 'requirements.xlsx' not found. Place it in the backend folder.")
@@ -30,12 +37,20 @@ except FileNotFoundError:
 # API endpoint to get requirements based on from_country and to_country
 @app.get("/api/requirements")
 def get_requirements(from_country: str = Query(...), to_country: str = Query(...)):
+    from_country = from_country.strip()
+    to_country = to_country.strip()
+
     result = data[
         (data["From Country"] == from_country) &
         (data["To Country"] == to_country)
     ]
+
     if not result.empty:
         return {"status": "success", "requirement": result.iloc[0]["Requirement"]}
     else:
-        return {"status": "not_found", "requirement": "No data found for your selection."}
+        return {
+            "status": "not_found",
+            "requirement": "No data found for your selection."
+        }
+
 
