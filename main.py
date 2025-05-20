@@ -24,9 +24,9 @@ try:
     data = pd.read_excel("requirements.xlsx")
     data.columns = data.columns.str.strip()  # Clean column names
 
-    # Strip whitespace and convert to lowercase
-    data["From Country"] = data["From Country"].astype(str).str.strip().str.lower()
-    data["To Country"] = data["To Country"].astype(str).str.strip().str.lower()
+    # Keep data formatting as-is (no lowercasing or stripping)
+    data["From Country"] = data["From Country"].astype(str)
+    data["To Country"] = data["To Country"].astype(str)
     data["Requirement"] = data["Requirement"].astype(str).str.strip()
 
     print("✅ requirements.xlsx loaded successfully with shape:", data.shape)
@@ -40,23 +40,18 @@ except FileNotFoundError:
 # API endpoint to get requirements based on from_country and to_country
 @app.get("/api/requirements")
 def get_requirements(from_country: str = Query(...), to_country: str = Query(...)):
-    print("hello")
-    from_country = from_country.strip().lower()
-    print("hello")
-    to_country = to_country.strip().lower()
-    print("hello")
     result = data[
         (data["From Country"] == from_country) &
         (data["To Country"] == to_country)
     ]
 
     if not result.empty:
-        print("hello")
         return {"status": "success", "requirement": result.iloc[0]["Requirement"]}
     else:
-         return {
+        return {
             "status": "not_found",
             "requirement": "No data found for your selection."
         }
+
 
 
